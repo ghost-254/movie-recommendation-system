@@ -40,6 +40,7 @@ FRONTEND_URL=https://your-frontend-domain.vercel.app
 HF_MODEL_REPO=your-huggingface-username/your-model-repo
 HF_MODEL_REVISION=main
 HF_TOKEN=optional_for_private_model_repo
+MODEL_LOAD_ON_STARTUP=false
 ```
 
 `FRONTEND_URL` is used by CORS for deployed frontend access.
@@ -81,6 +82,7 @@ Use `HF_TOKEN` only if your Hugging Face model repository is private.
    - `HF_MODEL_REPO` (example: `username/movie-sst5-distilbert`)
    - `HF_MODEL_REVISION` (usually `main`)
    - `HF_TOKEN` (only needed for private Hugging Face repos)
+   - `MODEL_LOAD_ON_STARTUP=false`
 7. Deploy and copy the backend URL.
 8. Update frontend `assets/js/config.js` to use deployed backend URL.
 
@@ -95,5 +97,6 @@ The Hugging Face model repository should contain:
 - `special_tokens_map.json`
 - `training_args.bin`
 
-On startup, the backend checks `backend/saved_sst5_model/`. If required files are missing and `HF_MODEL_REPO`
-is set, it downloads the model snapshot into that folder before loading DistilBERT.
+By default, Render starts the web server first and loads the model on the first analysis request. This keeps Render's
+port check from timing out while the model downloads. If you want the app to load the model during startup instead,
+set `MODEL_LOAD_ON_STARTUP=true`.

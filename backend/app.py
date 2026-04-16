@@ -111,7 +111,10 @@ CORS(
     },
 )
 
-model_service = SentimentModelService(model_dir=str(BASE_DIR / "saved_sst5_model"))
+model_service = SentimentModelService(
+    model_dir=str(BASE_DIR / "saved_sst5_model"),
+    load_on_startup=os.getenv("MODEL_LOAD_ON_STARTUP", "false").lower() == "true",
+)
 movie_service = TMDbService(api_key=os.getenv("TMDB_API_KEY", "").strip())
 explain_service = ReviewExplainService(
     model_service=model_service,
@@ -127,6 +130,7 @@ def health():
             "model_loaded": model_service.is_ready,
             "model_error": model_service.load_error,
             "tmdb_configured": movie_service.is_configured,
+            "hf_model_repo_configured": bool(os.getenv("HF_MODEL_REPO", "").strip()),
         }
     )
 

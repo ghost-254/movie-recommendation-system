@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from threading import Lock
 from typing import Dict, List
 
 from huggingface_hub import snapshot_download
@@ -23,13 +24,15 @@ class SentimentModelService:
     and exposes single/batch prediction helpers.
     """
 
-    def __init__(self, model_dir: str = "./saved_sst5_model") -> None:
+    def __init__(self, model_dir: str = "./saved_sst5_model", load_on_startup: bool = False) -> None:
         self.model_dir = Path(model_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
         self.model = None
         self.load_error = None
-        self._load_model()
+        self._load_lock = Lock()
+        if load_on_startup:
+            self.load_model()
 
     @property
     def is_ready(self) -> bool:
@@ -98,7 +101,20 @@ class SentimentModelService:
                 f"Please verify files in ./saved_sst5_model. Original error: {exc}"
             )
 
+    def load_model(self) -> None:
+        if self.is_ready:
+            return
+
+        with self._load_lock:
+            if self.is_ready:
+                return
+            self.load_error = None
+            self._load_model()
+
     def _ensure_model_ready(self) -> None:
+        if not self.is_ready:
+            self.load_model()
+
         if not self.is_ready:
             raise RuntimeError(self.load_error or "Model is not loaded.")
 
