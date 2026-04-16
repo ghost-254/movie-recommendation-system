@@ -1,11 +1,20 @@
+import os
 from pathlib import Path
 from typing import Dict, List
 
+from huggingface_hub import snapshot_download
 import numpy as np
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 SENTIMENT_LABELS = ["very negative", "negative", "neutral", "positive", "very positive"]
+MODEL_FILES = [
+    "config.json",
+    "model.safetensors",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "special_tokens_map.json",
+]
 
 
 class SentimentModelService:
@@ -26,7 +35,48 @@ class SentimentModelService:
     def is_ready(self) -> bool:
         return self.model is not None and self.tokenizer is not None and self.load_error is None
 
+    def _missing_model_files(self) -> List[str]:
+        return [filename for filename in MODEL_FILES if not (self.model_dir / filename).exists()]
+
+    def _download_model_if_configured(self) -> None:
+        missing_files = self._missing_model_files()
+        if not missing_files:
+            return
+
+        model_repo = os.getenv("HF_MODEL_REPO", "").strip()
+        if not model_repo:
+            self.load_error = (
+                f"Missing model files in {self.model_dir.resolve()}: {', '.join(missing_files)}. "
+                "Add the files locally or set HF_MODEL_REPO so the backend can download them from Hugging Face."
+            )
+            return
+
+        self.model_dir.mkdir(parents=True, exist_ok=True)
+        token = os.getenv("HF_TOKEN", "").strip() or None
+        revision = os.getenv("HF_MODEL_REVISION", "main").strip() or "main"
+
+        try:
+            snapshot_download(
+                repo_id=model_repo,
+                repo_type="model",
+                revision=revision,
+                token=token,
+                local_dir=str(self.model_dir),
+                allow_patterns=[*MODEL_FILES, "training_args.bin"],
+            )
+        except Exception as exc:  # noqa: BLE001
+            self.load_error = (
+                f"Failed to download model files from Hugging Face repo '{model_repo}'. "
+                f"Original error: {exc}"
+            )
+
     def _load_model(self) -> None:
+        if not self.model_dir.exists() or self._missing_model_files():
+            self._download_model_if_configured()
+
+        if self.load_error:
+            return
+
         if not self.model_dir.exists():
             self.load_error = (
                 f"Model directory not found at {self.model_dir.resolve()}. "
