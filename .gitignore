@@ -1,0 +1,11 @@
+.env
+.env.local
+backend/.env
+backend/.env.local
+backend/backend-server.*.log
+backend/saved_sst5_model/model.safetensors
+backend/static/explanations/*.png
+__pycache__/
+*.pyc
+.venv/
+venv/

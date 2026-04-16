@@ -1,0 +1,11 @@
+flask
+flask-cors
+gunicorn
+requests
+transformers
+torch
+lime
+shap
+matplotlib
+numpy
+scikit-learn

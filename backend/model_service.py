@@ -1,0 +1,120 @@
+from pathlib import Path
+from typing import Dict, List
+
+import numpy as np
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+SENTIMENT_LABELS = ["very negative", "negative", "neutral", "positive", "very positive"]
+
+
+class SentimentModelService:
+    """
+    Loads a fine-tuned DistilBERT SST-5 model from ./saved_sst5_model
+    and exposes single/batch prediction helpers.
+    """
+
+    def __init__(self, model_dir: str = "./saved_sst5_model") -> None:
+        self.model_dir = Path(model_dir)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.tokenizer = None
+        self.model = None
+        self.load_error = None
+        self._load_model()
+
+    @property
+    def is_ready(self) -> bool:
+        return self.model is not None and self.tokenizer is not None and self.load_error is None
+
+    def _load_model(self) -> None:
+        if not self.model_dir.exists():
+            self.load_error = (
+                f"Model directory not found at {self.model_dir.resolve()}. "
+                "Expected fine-tuned SST-5 files under ./saved_sst5_model."
+            )
+            return
+
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
+            self.model = AutoModelForSequenceClassification.from_pretrained(self.model_dir)
+            self.model.to(self.device)
+            self.model.eval()
+            self.load_error = None
+        except Exception as exc:  # noqa: BLE001
+            self.model = None
+            self.tokenizer = None
+            self.load_error = (
+                f"Failed to load model from {self.model_dir.resolve()}. "
+                f"Please verify files in ./saved_sst5_model. Original error: {exc}"
+            )
+
+    def _ensure_model_ready(self) -> None:
+        if not self.is_ready:
+            raise RuntimeError(self.load_error or "Model is not loaded.")
+
+    @staticmethod
+    def _clean_text(text: str) -> str:
+        if not isinstance(text, str):
+            return ""
+        return text.strip()
+
+    def predict_proba(self, texts: List[str]) -> np.ndarray:
+        self._ensure_model_ready()
+
+        normalized = [self._clean_text(text) for text in texts]
+        encoded = self.tokenizer(
+            normalized,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,
+            max_length=512,
+        )
+        encoded = {key: value.to(self.device) for key, value in encoded.items()}
+
+        with torch.no_grad():
+            logits = self.model(**encoded).logits
+            probabilities = torch.softmax(logits, dim=-1).cpu().numpy()
+
+        return probabilities
+
+    def predict_review_sentiment(self, text: str) -> Dict[str, object]:
+        cleaned_text = self._clean_text(text)
+        if not cleaned_text:
+            raise ValueError("Review text must be non-empty.")
+
+        probabilities = self.predict_proba([cleaned_text])[0]
+        label_index = int(np.argmax(probabilities))
+        label = SENTIMENT_LABELS[label_index]
+
+        return {
+            "label_index": label_index,
+            "label": label,
+            "scores": {
+                SENTIMENT_LABELS[index]: float(probability)
+                for index, probability in enumerate(probabilities)
+            },
+        }
+
+    def predict_reviews_batch(self, reviews: List[str]) -> List[Dict[str, object]]:
+        if not isinstance(reviews, list):
+            raise ValueError("reviews must be a list of strings.")
+        if not reviews:
+            return []
+
+        probabilities_batch = self.predict_proba(reviews)
+        predictions = []
+        for probabilities in probabilities_batch:
+            label_index = int(np.argmax(probabilities))
+            label = SENTIMENT_LABELS[label_index]
+            predictions.append(
+                {
+                    "label_index": label_index,
+                    "label": label,
+                    "scores": {
+                        SENTIMENT_LABELS[index]: float(probability)
+                        for index, probability in enumerate(probabilities)
+                    },
+                }
+            )
+
+        return predictions

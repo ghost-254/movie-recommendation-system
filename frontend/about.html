@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About | Movie Recommendation System</title>
+  <meta name="description" content="Background on SST-5, DistilBERT, LIME, SHAP, and system workflow." />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div>
+        <h1>About This Project</h1>
+        <p class="subtitle">Methodology and model explainability overview</p>
+      </div>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a href="about.html" aria-current="page">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-content">
+    <section class="card">
+      <h2>SST-5 Sentiment Classes</h2>
+      <p>
+        SST-5 (Stanford Sentiment Treebank, 5-class setup) is a fine-grained sentiment task with five labels:
+        <strong>very negative</strong>, <strong>negative</strong>, <strong>neutral</strong>, <strong>positive</strong>, and
+        <strong>very positive</strong>. This project uses those same labels for movie review prediction.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Why DistilBERT</h2>
+      <p>
+        DistilBERT is a compact transformer derived from BERT through knowledge distillation. It preserves strong language
+        understanding while reducing model size and inference cost, making it practical for student projects and lightweight
+        deployment.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>LIME and SHAP</h2>
+      <p>
+        LIME and SHAP are model-agnostic explanation approaches. LIME explains a specific prediction by fitting a local
+        surrogate model around one example. SHAP estimates each feature's contribution using a game-theoretic framework. In
+        this starter project, the API includes LIME image generation and keeps SHAP support as an extensible dependency.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>System Workflow</h2>
+      <ol>
+        <li>User searches for a movie title on the homepage.</li>
+        <li>Backend calls TMDb to fetch movie metadata and audience reviews.</li>
+        <li>Each review is scored by the fine-tuned DistilBERT SST-5 model.</li>
+        <li>Sentiment counts and an overall summary are returned to the frontend.</li>
+        <li>User can request a LIME explanation for any selected review.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p><a href="index.html" class="text-link">Return to search</a></p>
+    </div>
+  </footer>
+</body>
+</html>

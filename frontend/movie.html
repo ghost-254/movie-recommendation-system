@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movie Analysis | Movie Recommendation System</title>
+  <meta name="description" content="Detailed movie review sentiment analysis and LIME explanations." />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div>
+        <h1>Movie Analysis</h1>
+        <p class="subtitle">Review-level sentiment scoring and explainability</p>
+      </div>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-content">
+    <p><a href="index.html" class="text-link">&larr; Back to search</a></p>
+    <p id="movie-status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="movie-section" class="card movie-layout" hidden>
+      <img id="movie-poster" class="movie-poster-large" src="" alt="Movie poster" />
+      <div class="movie-main-details">
+        <h2 id="movie-title"></h2>
+        <p><strong>Release Year:</strong> <span id="movie-release-year"></span></p>
+        <p><strong>TMDb Rating:</strong> <span id="movie-rating"></span></p>
+        <p id="movie-overview" class="overview"></p>
+      </div>
+    </section>
+
+    <section id="summary-section" class="card" hidden>
+      <h2>Sentiment Summary</h2>
+      <p id="overall-summary-text"></p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Count</th>
+              <th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody id="sentiment-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="reviews-section" class="card" hidden>
+      <h2>Reviews</h2>
+      <p class="muted">
+        Use <strong>Analyze This Review</strong> for one-off predictions and <strong>Explain Prediction</strong> to generate
+        a LIME explanation image.
+      </p>
+      <div id="reviews-list" class="reviews-list"></div>
+    </section>
+
+    <section id="explanation-section" class="card" hidden>
+      <h2>Explanation Output</h2>
+      <p id="explanation-prediction" class="muted"></p>
+      <p id="explanation-status" class="muted"></p>
+      <div class="explanation-frame">
+        <img id="explanation-image" class="explanation-image" src="" alt="LIME explanation image" hidden />
+      </div>
+      <p>
+        <a id="explanation-link" class="text-link" href="#" target="_blank" rel="noopener" hidden>
+          Open generated PNG
+        </a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Model classes: very negative, negative, neutral, positive, very positive.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/js/movie.js"></script>
+</body>
+</html>

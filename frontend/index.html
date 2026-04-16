@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movie Recommendation System</title>
+  <meta name="description" content="Sentiment-aware movie recommendation and review analysis using DistilBERT SST-5." />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div>
+        <h1>Movie Recommendation System</h1>
+        <p class="subtitle">
+          Sentiment-aware analysis of TMDb movie reviews using a fine-tuned DistilBERT SST-5 model.
+        </p>
+      </div>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="index.html" aria-current="page">Home</a>
+        <a href="about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-content">
+    <section class="card">
+      <h2>Search Movies</h2>
+      <p>
+        Enter a movie title to retrieve metadata and reviews from TMDb, then open a detailed sentiment analysis page.
+      </p>
+
+      <form id="search-form" class="search-form">
+        <label for="search-input" class="visually-hidden">Movie title</label>
+        <input id="search-input" name="query" type="text" placeholder="e.g., Interstellar" required />
+        <button type="submit">Search</button>
+      </form>
+
+      <p id="status-message" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>Search Results</h2>
+        <a href="about.html" class="text-link">Methodology</a>
+      </div>
+      <div id="results" class="results-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Academic project template: TMDb + DistilBERT SST-5 + LIME explainability.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
