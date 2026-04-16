@@ -6,7 +6,6 @@ requests
 transformers
 torch
 lime
-shap
 matplotlib
 numpy
 scikit-learn

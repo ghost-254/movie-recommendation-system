@@ -5,8 +5,6 @@ from typing import Dict, List
 
 from huggingface_hub import snapshot_download
 import numpy as np
-import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 SENTIMENT_LABELS = ["very negative", "negative", "neutral", "positive", "very positive"]
 MODEL_FILES = [
@@ -26,9 +24,10 @@ class SentimentModelService:
 
     def __init__(self, model_dir: str = "./saved_sst5_model", load_on_startup: bool = False) -> None:
         self.model_dir = Path(model_dir)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = None
         self.tokenizer = None
         self.model = None
+        self.torch = None
         self.load_error = None
         self._load_lock = Lock()
         if load_on_startup:
@@ -88,6 +87,11 @@ class SentimentModelService:
             return
 
         try:
+            import torch
+            from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+            self.torch = torch
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
             self.model = AutoModelForSequenceClassification.from_pretrained(self.model_dir)
             self.model.to(self.device)
@@ -137,9 +141,9 @@ class SentimentModelService:
         )
         encoded = {key: value.to(self.device) for key, value in encoded.items()}
 
-        with torch.no_grad():
+        with self.torch.no_grad():
             logits = self.model(**encoded).logits
-            probabilities = torch.softmax(logits, dim=-1).cpu().numpy()
+            probabilities = self.torch.softmax(logits, dim=-1).cpu().numpy()
 
         return probabilities
 

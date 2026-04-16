@@ -3,13 +3,6 @@ import uuid
 from pathlib import Path
 from typing import Dict
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import shap  # noqa: F401  # Included for interpretability extensions.
-from lime.lime_text import LimeTextExplainer
-
 from model_service import SENTIMENT_LABELS, SentimentModelService
 
 
@@ -23,7 +16,16 @@ class ReviewExplainService:
         self.model_service = model_service
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.explainer = None
+
+    def _get_explainer(self):
+        if self.explainer is not None:
+            return self.explainer
+
+        from lime.lime_text import LimeTextExplainer
+
         self.explainer = LimeTextExplainer(class_names=SENTIMENT_LABELS)
+        return self.explainer
 
     def explain_review(self, review_text: str) -> Dict[str, object]:
         text = review_text.strip() if isinstance(review_text, str) else ""
@@ -32,15 +34,21 @@ class ReviewExplainService:
 
         prediction = self.model_service.predict_review_sentiment(text)
         predicted_label_index = prediction["label_index"]
+        explainer = self._get_explainer()
 
         # LIME perturbs the input text and queries model probabilities to build a local explanation.
-        explanation = self.explainer.explain_instance(
+        explanation = explainer.explain_instance(
             text_instance=text,
             classifier_fn=self.model_service.predict_proba,
             labels=[predicted_label_index],
             num_features=10,
             num_samples=500,
         )
+
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
 
         figure = explanation.as_pyplot_figure(label=predicted_label_index)
         figure.tight_layout()
