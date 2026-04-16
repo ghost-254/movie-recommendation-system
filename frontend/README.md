@@ -19,7 +19,7 @@ This frontend is a plain HTML/CSS/JavaScript client designed for static deployme
 Edit `assets/js/config.js`:
 
 ```javascript
-const API_BASE_URL = "http://127.0.0.1:5500";
+const API_BASE_URL = "https://movie-recommendation-system-mrs.up.railway.app";
 ```
 
 Use local backend URL for development and your deployed backend URL for production.
