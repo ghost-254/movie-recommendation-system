@@ -3,7 +3,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Dict, List
 
-from huggingface_hub import snapshot_download
+from huggingface_hub import HfApi, snapshot_download
 import numpy as np
 
 SENTIMENT_LABELS = ["very negative", "negative", "neutral", "positive", "very positive"]
@@ -39,6 +39,47 @@ class SentimentModelService:
 
     def _missing_model_files(self) -> List[str]:
         return [filename for filename in MODEL_FILES if not (self.model_dir / filename).exists()]
+
+    def inspect_remote_model_repo(self) -> Dict[str, object]:
+        model_repo = os.getenv("HF_MODEL_REPO", "").strip()
+        revision = os.getenv("HF_MODEL_REVISION", "main").strip() or "main"
+        token = os.getenv("HF_TOKEN", "").strip() or None
+
+        if not model_repo:
+            return {
+                "configured": False,
+                "repo_id": None,
+                "revision": revision,
+                "error": "HF_MODEL_REPO is not set.",
+            }
+
+        try:
+            api = HfApi(token=token)
+            files = api.list_repo_files(repo_id=model_repo, repo_type="model", revision=revision)
+            root_files = {file_path for file_path in files if "/" not in file_path}
+            nested_model_files = [
+                file_path for file_path in files if file_path.split("/")[-1] in MODEL_FILES
+            ]
+            missing_files = [filename for filename in MODEL_FILES if filename not in root_files]
+
+            return {
+                "configured": True,
+                "repo_id": model_repo,
+                "revision": revision,
+                "required_files": MODEL_FILES,
+                "missing_root_files": missing_files,
+                "nested_matching_files": nested_model_files,
+                "root_file_count": len(root_files),
+                "total_file_count": len(files),
+                "valid_root_layout": len(missing_files) == 0,
+            }
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "configured": True,
+                "repo_id": model_repo,
+                "revision": revision,
+                "error": str(exc),
+            }
 
     def _download_model_if_configured(self) -> None:
         missing_files = self._missing_model_files()

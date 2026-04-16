@@ -61,6 +61,7 @@ Use `HF_TOKEN` only if your Hugging Face model repository is private.
 ## API endpoints
 
 - `GET /health`
+- `GET /api/model-repo-status`
 - `GET /api/search-movies?query=<movie_name>`
 - `GET /api/movie/<movie_id>`
 - `GET /api/movie/<movie_id>/reviews`
@@ -100,3 +101,10 @@ The Hugging Face model repository should contain:
 By default, Render starts the web server first and loads the model on the first analysis request. This keeps Render's
 port check from timing out while the model downloads. If you want the app to load the model during startup instead,
 set `MODEL_LOAD_ON_STARTUP=true`.
+
+To confirm the model repository layout after deployment, open:
+
+`https://your-render-service.onrender.com/api/model-repo-status`
+
+`valid_root_layout` should be `true`. If it is `false`, the model files were probably uploaded inside a subfolder
+instead of at the root of the Hugging Face model repo.

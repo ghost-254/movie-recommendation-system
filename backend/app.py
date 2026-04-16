@@ -135,6 +135,11 @@ def health():
     )
 
 
+@app.get("/api/model-repo-status")
+def model_repo_status():
+    return jsonify(model_service.inspect_remote_model_repo())
+
+
 @app.get("/api/search-movies")
 def search_movies():
     query = request.args.get("query", "").strip()
