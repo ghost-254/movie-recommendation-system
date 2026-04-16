@@ -41,6 +41,10 @@ HF_MODEL_REPO=your-huggingface-username/your-model-repo
 HF_MODEL_REVISION=main
 HF_TOKEN=optional_for_private_model_repo
 MODEL_LOAD_ON_STARTUP=false
+MODEL_BATCH_SIZE=16
+LIME_MAX_WORDS=180
+LIME_NUM_SAMPLES=120
+LIME_NUM_FEATURES=10
 ```
 
 `FRONTEND_URL` is used by CORS for deployed frontend access.
@@ -84,6 +88,10 @@ Use `HF_TOKEN` only if your Hugging Face model repository is private.
    - `HF_MODEL_REVISION` (usually `main`)
    - `HF_TOKEN` (only needed for private Hugging Face repos)
    - `MODEL_LOAD_ON_STARTUP=false`
+   - `MODEL_BATCH_SIZE=16`
+   - `LIME_MAX_WORDS=180`
+   - `LIME_NUM_SAMPLES=120`
+   - `LIME_NUM_FEATURES=10`
 7. Deploy and copy the backend URL.
 8. Update frontend `assets/js/config.js` to use deployed backend URL.
 
@@ -101,6 +109,9 @@ The Hugging Face model repository should contain:
 By default, Render starts the web server first and loads the model on the first analysis request. This keeps Render's
 port check from timing out while the model downloads. If you want the app to load the model during startup instead,
 set `MODEL_LOAD_ON_STARTUP=true`.
+
+For small hosting instances, explanation generation is intentionally bounded. Long reviews are shortened for LIME while
+the sentiment prediction still uses the full review text. Lower `LIME_NUM_SAMPLES` if explanation requests time out.
 
 To confirm the model repository layout after deployment, open:
 

@@ -169,24 +169,32 @@ class SentimentModelService:
             return ""
         return text.strip()
 
-    def predict_proba(self, texts: List[str]) -> np.ndarray:
+    def predict_proba(self, texts: List[str], batch_size: int = None) -> np.ndarray:
         self._ensure_model_ready()
 
         normalized = [self._clean_text(text) for text in texts]
-        encoded = self.tokenizer(
-            normalized,
-            return_tensors="pt",
-            truncation=True,
-            padding=True,
-            max_length=512,
-        )
-        encoded = {key: value.to(self.device) for key, value in encoded.items()}
+        if not normalized:
+            return np.empty((0, len(SENTIMENT_LABELS)))
+
+        effective_batch_size = batch_size or int(os.getenv("MODEL_BATCH_SIZE", "16"))
+        effective_batch_size = max(1, effective_batch_size)
+        probability_batches = []
 
         with self.torch.no_grad():
-            logits = self.model(**encoded).logits
-            probabilities = self.torch.softmax(logits, dim=-1).cpu().numpy()
+            for start in range(0, len(normalized), effective_batch_size):
+                batch = normalized[start : start + effective_batch_size]
+                encoded = self.tokenizer(
+                    batch,
+                    return_tensors="pt",
+                    truncation=True,
+                    padding=True,
+                    max_length=256,
+                )
+                encoded = {key: value.to(self.device) for key, value in encoded.items()}
+                logits = self.model(**encoded).logits
+                probability_batches.append(self.torch.softmax(logits, dim=-1).cpu().numpy())
 
-        return probabilities
+        return np.concatenate(probability_batches, axis=0)
 
     def predict_review_sentiment(self, text: str) -> Dict[str, object]:
         cleaned_text = self._clean_text(text)

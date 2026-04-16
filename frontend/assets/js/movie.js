@@ -142,6 +142,9 @@ function attachReviewActions(reviewsById) {
         const imageUrl = `${rawImageUrl}${cacheSeparator}t=${Date.now()}`;
 
         explanationPredictionEl.textContent = `Latest explanation prediction: ${predictionLabel}`;
+        if (response.explanation_text_was_truncated) {
+          explanationPredictionEl.textContent += `; explanation used ${response.explanation_used_word_count} of ${response.explanation_original_word_count} words.`;
+        }
         explanationStatusEl.textContent = "Loading generated PNG...";
         explanationImageEl.alt = `LIME explanation for review by ${review.author || "anonymous user"}`;
         explanationImageEl.onload = () => {

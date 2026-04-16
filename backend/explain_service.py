@@ -1,5 +1,6 @@
 import time
 import uuid
+import os
 from pathlib import Path
 from typing import Dict
 
@@ -27,6 +28,26 @@ class ReviewExplainService:
         self.explainer = LimeTextExplainer(class_names=SENTIMENT_LABELS)
         return self.explainer
 
+    @staticmethod
+    def _limit_text_for_explanation(text: str, max_words: int) -> Dict[str, object]:
+        words = text.split()
+        if len(words) <= max_words:
+            return {
+                "text": text,
+                "was_truncated": False,
+                "original_word_count": len(words),
+                "used_word_count": len(words),
+            }
+
+        half = max_words // 2
+        limited_words = words[:half] + words[-(max_words - half) :]
+        return {
+            "text": " ".join(limited_words),
+            "was_truncated": True,
+            "original_word_count": len(words),
+            "used_word_count": len(limited_words),
+        }
+
     def explain_review(self, review_text: str) -> Dict[str, object]:
         text = review_text.strip() if isinstance(review_text, str) else ""
         if not text:
@@ -35,14 +56,18 @@ class ReviewExplainService:
         prediction = self.model_service.predict_review_sentiment(text)
         predicted_label_index = prediction["label_index"]
         explainer = self._get_explainer()
+        max_words = int(os.getenv("LIME_MAX_WORDS", "180"))
+        num_samples = int(os.getenv("LIME_NUM_SAMPLES", "120"))
+        num_features = int(os.getenv("LIME_NUM_FEATURES", "10"))
+        limited = self._limit_text_for_explanation(text, max_words=max_words)
 
         # LIME perturbs the input text and queries model probabilities to build a local explanation.
         explanation = explainer.explain_instance(
-            text_instance=text,
-            classifier_fn=self.model_service.predict_proba,
+            text_instance=limited["text"],
+            classifier_fn=lambda texts: self.model_service.predict_proba(list(texts), batch_size=8),
             labels=[predicted_label_index],
-            num_features=10,
-            num_samples=500,
+            num_features=num_features,
+            num_samples=num_samples,
         )
 
         import matplotlib
@@ -61,4 +86,8 @@ class ReviewExplainService:
         return {
             "prediction": prediction,
             "image_path": f"/static/explanations/{filename}",
+            "explanation_text_was_truncated": limited["was_truncated"],
+            "explanation_original_word_count": limited["original_word_count"],
+            "explanation_used_word_count": limited["used_word_count"],
+            "lime_num_samples": num_samples,
         }
